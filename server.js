@@ -1,8 +1,8 @@
 const express = require('express');
 const path = require('path');
+
 const uuid = require('./helpers/uuid');
-const data = require('./db/db.json');
-const fs = require('fs');
+const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
 
 const PORT = 3001;
 const app = express();
@@ -16,7 +16,32 @@ app.get('*', (req, res) =>
     res.sendFile(path.join(__dirname, '/public/index.html'))
 );
 
+app.get('/notes', (req, res) =>
+    res.sendFile(path.join(__dirname, '/public/notes.html'))
+);
 
+app.get('/api/notes', (req, res) => {
+    readFromFile('./db/db.json').then((data) => res.json(JSON.parse(data)));
+});
+
+app.post('/api/notes', (req, res) => {
+    console.log(req.body);
+
+    const { title, text } = req.body;
+
+    if (req.body) {
+        const newNote = {
+            title,
+            text,
+            note_id: uuid(),
+        };
+
+        readAndAppend(newNote, './db/db.json');
+        res.json(`Note added successfully 🚀`);
+    } else {
+        res.error('Error in adding note');
+    }
+});
 
 app.listen(PORT, () =>
     console.log(`App listening at http://localhost:${PORT}`)
